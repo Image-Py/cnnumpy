@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='infCNN',
+    name='cnnumpy',
     packages=find_packages()
 )
