@@ -56,7 +56,7 @@ print(net.flw2code('self'))
 shp = {'conv':[[64, 3, 3, 3], [1, 64]]}
 data = np.zeros(64*3*3*3+1*64, dtype=np.float32)
 
-net.load_data(data, shp)
+net.load_weights(data)
 
 load_a_net = '''
 write the layer, flow, shp as json format, 

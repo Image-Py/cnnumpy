@@ -67,18 +67,10 @@ class Net:
 				body.append('')
 		return '\n'.join(body)
 
-	def load_data(self, data, shpkey):
+	def load_weights(self, data):
 		s = 0
-		for i in shpkey:
-			for j in range(len(shpkey[i])):
-				sp = shpkey[i][j]
-				l = np.cumprod(sp)[-1]
-				shpkey[i][j] = data[s:s+l].reshape(sp)
-				s += l
-		dic = dict(self.body)
-		for i in shpkey:
-			dic[i].K = shpkey[i][0]
-			dic[i].bias = shpkey[i][1]
+		for i in self.body: 
+			s += i[1].load(data[s:])
 
 	def __call__(self, x):
 		return self.forward(x)
@@ -88,9 +80,7 @@ def read_net(path):
 	with open(path+'.lay') as f: lay = json.load(f)
 	with open(path+'.flw') as f: flw = json.load(f)
 	net.load_json(lay, flw)
-	data = np.load(path+'.npy')
-	with open(path+'.shp') as f: shp = json.load(f)
-	net.load_data(data, shp)
+	net.load_weights(np.load(path+'.npy'))
 	return net
 
 if __name__ == '__main__':

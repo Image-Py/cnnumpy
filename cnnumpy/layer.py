@@ -12,6 +12,8 @@ class Layer:
 
     def para(self): return None
 
+    def load(self, buf): return 0
+
     def __call__(self, x):
         return self.forward(x)
 
@@ -28,9 +30,11 @@ class Dense(Layer):
         y += self.bias.reshape((1, -1))
         return y
 
-    def load(self, weights, bias):
-        self.K = weights.copy()
-        self.bias = bias.copy()
+    def load(self, buf):
+        sk, sb = self.K.size, self.bias.size
+        self.K.ravel()[:] = buf[:sk]
+        self.bias.ravel()[:] = buf[sk:sk+sb]
+        return sk + sb
 
 class Conv2d(Layer):
     name = 'conv'
@@ -46,9 +50,11 @@ class Conv2d(Layer):
         out += self.bias.reshape((1, -1, 1, 1))
         return out
 
-    def load(self, weights, bias):
-        self.K = weights.copy()
-        self.bias = bias.copy()
+    def load(self, buf):
+        sk, sb = self.K.size, self.bias.size
+        self.K.ravel()[:] = buf[:sk]
+        self.bias.ravel()[:] = buf[sk:sk+sb]
+        return sk + sb
 
 class ReLU(Layer):
     name = 'relu'
