@@ -1,2 +1,3 @@
 from .layer import *
-from .net import Net, read_net
+from .net import Net
+from .io import read_net, read_onnx

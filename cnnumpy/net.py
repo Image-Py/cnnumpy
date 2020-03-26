@@ -1,6 +1,4 @@
 from .layer import layerkey as key
-import numpy as np
-import json
 
 class Net:
 	def __init__(self):
@@ -19,7 +17,7 @@ class Net:
 		for x, ls, y in self.cmds:
 			for l in ls:
 				out = x if l == ls[0] else y
-				if isinstance(out, list):
+				if not isinstance(out, str):
 					p = [rst[i] for i in out]
 				else: p = rst[out]
 				rst[y] = dic[l](p)
@@ -74,14 +72,6 @@ class Net:
 
 	def __call__(self, x):
 		return self.forward(x)
-
-def read_net(path):
-	net = Net()
-	with open(path+'.lay') as f: lay = json.load(f)
-	with open(path+'.flw') as f: flw = json.load(f)
-	net.load_json(lay, flw)
-	net.load_weights(np.load(path+'.npy'))
-	return net
 
 if __name__ == '__main__':
 	pass
