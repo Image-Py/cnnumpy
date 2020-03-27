@@ -1,5 +1,6 @@
 import json, re, numpy as np
 from .net import Net
+import os
 
 def read_net(path):
 	net = Net()
@@ -38,7 +39,7 @@ weight = re.compile(r'.*%(.+?) .+?(\(.*?\)).*\n')
 res = (flatten, upsample, conv, relu, sigmoid, maxpool, dense, concat, add, batchnorm, weight)
 
 def read_onnx(path):
-	with open(path+'.onnx') as f:
+	with open(path+'.txt') as f:
 		cont = f.read()
 	for i in res: cont = i.sub(parse, cont)
 	#for i in cont.split('\n'): print(i)
@@ -97,5 +98,9 @@ def read_onnx(path):
 	
 	net = Net()
 	net.load_json(body, flow)
-	net.load_weights(np.load(path+'.npy'))
+	if os.path.exists(path+'_bn.npy'):
+		bn = np.load(path+'_bn.npy')
+	else:
+		bn = []
+	net.load_weights(np.load(path+'.npy'), bn)
 	return net

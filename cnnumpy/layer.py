@@ -21,7 +21,7 @@ class Dense(Layer):
     name = 'dense'
     def __init__(self, c, n):
         self.K = np.zeros((n, c), dtype=np.float32)
-        self.bias = np.zeros(c, dtype=np.float32)
+        self.bias = np.zeros(n, dtype=np.float32)
 
     def para(self): return self.K.shape
 
@@ -91,6 +91,7 @@ class Softmax(Layer):
 class Maxpool(Layer):
     name = 'maxpool'
     def __init__(self, w=2, stride=2):
+        self.w = w
         self.stride = stride
 
     def para(self): return (self.stride,)
@@ -114,16 +115,32 @@ class Concatenate(Layer):
 
     def forward(self, x):
         return np.concatenate(x, axis=1)
-
+        
 class BatchNorm(Layer):
     name = 'batchnorm'
     def __init__(self, c):
         self.c = c
+        self.k = np.zeros(c, dtype=np.float32)
+        self.b = np.zeros(c, dtype=np.float32)
+        self.m = np.zeros(c, dtype=np.float32)
+        self.v = np.zeros(c, dtype=np.float32)
     
     def forward(self, x):
+
+        x = (x - self.m.reshape(1, -1, 1, 1))/np.sqrt(self.v.reshape(1, -1, 1, 1)) * self.k.reshape(1, -1, 1, 1) + self.b.reshape(1, -1, 1, 1)
+
         return x
 
     def load(self, buf):
+        c = self.c
+        self.k = buf[:c]
+        self.b = buf[c:2*c]
+        return self.c * 2
+
+    def load_bn(self, buf):
+        c = self.c
+        self.m = buf[:c]
+        self.v = buf[c:2*c]
         return self.c * 2
 
 layerkey = {'dense':Dense, 'conv':Conv2d, 'relu':ReLU, 'batchnorm':BatchNorm,
