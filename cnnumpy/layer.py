@@ -115,6 +115,13 @@ class Concatenate(Layer):
 
     def forward(self, x):
         return np.concatenate(x, axis=1)
+
+class Add(Layer):
+    name = 'add'
+    def __init__(self): pass
+
+    def forward(self, x):
+        return sum(x)
         
 class BatchNorm(Layer):
     name = 'batchnorm'
@@ -140,9 +147,10 @@ class BatchNorm(Layer):
         self.v[:] = buf[3*c:4*c]
         return self.c * 4
 
+
 layerkey = {'dense':Dense, 'conv':Conv2d, 'relu':ReLU, 'batchnorm':BatchNorm,
     'flatten':Flatten, 'sigmoid':Sigmoid, 'softmax': Softmax,
-    'maxpool':Maxpool, 'upsample':UpSample, 'concat':Concatenate}
+    'maxpool':Maxpool, 'upsample':UpSample, 'concat':Concatenate, 'add':Add}
 
 if __name__ == "__main__":
     pass
