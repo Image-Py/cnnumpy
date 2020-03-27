@@ -66,13 +66,9 @@ class Net:
 				body.append('')
 		return '\n'.join(body)
 
-	def load_weights(self, data, data_bn):
+	def load_weights(self, data):
 		s = 0
-		b = 0
 		for i in self.body: 
-			if 'batchnorm' in i[0]:
-				# print(i[0])
-				b += i[1].load_bn(data_bn[b:])
 			s += i[1].load(data[s:])
 		# print(data.shape, s)
 		# print(data_bn.shape, b)

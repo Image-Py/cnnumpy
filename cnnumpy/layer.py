@@ -126,22 +126,19 @@ class BatchNorm(Layer):
         self.v = np.zeros(c, dtype=np.float32)
     
     def forward(self, x):
-
-        x = (x - self.m.reshape(1, -1, 1, 1))/np.sqrt(self.v.reshape(1, -1, 1, 1)) * self.k.reshape(1, -1, 1, 1) + self.b.reshape(1, -1, 1, 1)
-
+        x = (x - self.m.reshape(1, -1, 1, 1))
+        x /= np.sqrt(self.v.reshape(1, -1, 1, 1))
+        x *= self.k.reshape(1, -1, 1, 1) 
+        x += self.b.reshape(1, -1, 1, 1)
         return x
 
     def load(self, buf):
         c = self.c
-        self.k = buf[:c]
-        self.b = buf[c:2*c]
-        return self.c * 2
-
-    def load_bn(self, buf):
-        c = self.c
-        self.m = buf[:c]
-        self.v = buf[c:2*c]
-        return self.c * 2
+        self.k[:] = buf[0*c:1*c]
+        self.b[:] = buf[1*c:2*c]
+        self.m[:] = buf[2*c:3*c]
+        self.v[:] = buf[3*c:4*c]
+        return self.c * 4
 
 layerkey = {'dense':Dense, 'conv':Conv2d, 'relu':ReLU, 'batchnorm':BatchNorm,
     'flatten':Flatten, 'sigmoid':Sigmoid, 'softmax': Softmax,

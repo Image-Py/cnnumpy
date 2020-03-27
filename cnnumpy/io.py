@@ -98,9 +98,5 @@ def read_onnx(path):
 	
 	net = Net()
 	net.load_json(body, flow)
-	if os.path.exists(path+'_bn.npy'):
-		bn = np.load(path+'_bn.npy')
-	else:
-		bn = []
-	net.load_weights(np.load(path+'.npy'), bn)
+	net.load_weights(np.load(path+'.npy'))
 	return net
