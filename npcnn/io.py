@@ -42,7 +42,7 @@ def read_onnx(path):
 	with open(path+'.txt') as f:
 		cont = f.read()
 	for i in res: cont = i.sub(parse, cont)
-	#for i in cont.split('\n'): print(i)
+	# for i in cont.split('\n'): print(i)
 	cont = [eval(i) for i in cont.split('\n') if len(i)>0 and i[0]=='[']
 	cont = [[eval(j) if (',' in j) else j for j in i] for i in cont]
 
@@ -58,7 +58,7 @@ def read_onnx(path):
 			flow.append((i[4][0], ['conv_%s'%num], i[0]))
 		elif i[1]=='Gemm':
 			num = len(body)
-			body.append(('dense_%s'%num, 'dense', key[i[2][1][::-1]]))
+			body.append(('dense_%s'%num, 'dense', key[i[2][1]]))
 			flow.append((i[2][0], ['dense_%s'%num], i[0]))
 		elif i[1]=='Sigmoid':
 			num = len(body)
@@ -93,8 +93,8 @@ def read_onnx(path):
 			body.append(('flatten_%s'%num, 'flatten', None))
 			flow.append((i[2], ['flatten_%s'%num], i[0]))
 
-	#for i in body: print(i)
-	#for i in flow: print(i)
+	# for i in body: print(i)
+	# for i in flow: print(i)
 	
 	net = Net()
 	net.load_json(body, flow)
