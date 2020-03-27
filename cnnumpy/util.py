@@ -5,12 +5,13 @@ except: njit = None
 
 if njit is None: print('install numba can double speed!')
 
-def neighbors(shape, core, offset=0):
+def neighbors(shape, core, offset=0, dilation=1):
     shp = [slice(0,i) for i in core]
     idx = np.mgrid[tuple(shp)]
     idx = idx.reshape((len(core),-1))
-    offset = np.array(core)//2*offset
+    offset = (np.array(core)-1)//2*offset
     idx -= offset.reshape((-1,1))
+    idx.T[:] *= dilation
     acc = np.cumprod((1,)+shape[::-1][:-1])
     return np.dot(idx.T, acc[::-1])
 
@@ -31,7 +32,7 @@ def fill_col(pdimg, idx, colimg):
 
 if not njit is None: fill_col = njit(jit_fill_col)
 
-def conv(img, core, stride=(1,1), buf=['']):
+def conv(img, core, stride=(1,1), dilation=(1,1), buf=['']):
     # new the col_img, if needed
     strh, strw = stride
     cimg_w = np.cumprod(core.shape[1:])[-1]
@@ -48,10 +49,10 @@ def conv(img, core, stride=(1,1), buf=['']):
     iimg &= 0xfffffffe
     iimg[:,0,::strh,::strw] |= 1
     # ravel the image
-    n,c,h,w = np.array(core.shape)
-    shp = ((0,0),(0,0),(h//2,h//2),(w//2,w//2))
+    (n,c,h,w), (dh, dw) = core.shape, dilation
+    shp = ((0,0),(0,0),(h*dh//2,h*dh//2),(w*dw//2,w*dw//2))
     pdimg = np.pad(iimg, shp, 'constant', constant_values=0)
-    nbs = neighbors(pdimg.shape[1:], core.shape[1:], (0,1,1))
+    nbs = neighbors(pdimg.shape[1:], core.shape[1:], (0,1,1), (1, dh, dw))
     fill_col(pdimg.ravel(), nbs, col_img)
     col_img = col_img.view(np.float32)
     col_img = col_img.reshape((cimg_h, cimg_w))
@@ -60,7 +61,6 @@ def conv(img, core, stride=(1,1), buf=['']):
     rst = col_core.dot(col_img.T)
     ni, ci, hi, wi = img.shape
     return rst.reshape((ni, n, hi//strh, wi//strw))
-
 
 def jit_fill_max(pdimg, idx, colimg):
     s = 0
@@ -79,19 +79,21 @@ def fill_max(pdimg, idx, colimg):
 
 if not njit is None: fill_max = njit(jit_fill_max)
 
-def maxpool(img, stride=(2,2)):
+def maxpool(img, core=(2,2), stride=(2,2)):
     strh, strw = stride
-    n,c,h,w = img.shape
-    cimg_h = n*c*(h//strh)*(w//strw)
+    (n,c,h,w), (ch, cw) = img.shape, core
     
     iimg = img.view(dtype=np.int32)
     iimg &= 0xfffffffe
     iimg[:,:,::strh,::strw] |= 1
     
-    nbs = neighbors(img.shape[1:], (1,)+stride)
+    shp = ((0,0),(0,0),((ch-1)//2,)*2,((cw-1)//2,)*2)
+    if np.array(shp).sum()==0: pdimg = iimg
+    else: pdimg = np.pad(iimg, shp, 'constant', constant_values=0)
+    nbs = neighbors(pdimg.shape[1:], (1,)+core, (0,1,1))
     shp = (n, c, h//strh, w//strw)
     colimg = np.zeros(shp, dtype=np.int32)
-    fill_max(iimg.ravel(), nbs, colimg.ravel())
+    fill_max(pdimg.ravel(), nbs, colimg.ravel())
     return colimg.view(np.float32)
 
 def jit_resize(img, k, ra, rb, rs, _rs, ca, cb, cs, _cs, out):
@@ -137,6 +139,7 @@ def upsample(img, k, out=None):
     return out
 
 if __name__ == '__main__':
+    '''
     from skimage.data import camera
     import matplotlib.pyplot as plt
     from scipy.ndimage import convolve
@@ -153,3 +156,9 @@ if __name__ == '__main__':
     start = time()
     rst2 = conv(img, core, (1,1))
     print('numpy cost:', time()-start)
+    '''
+    ##nbs = neighbors((4, 5, 6), (3,3,3), offset = (0,1,1), dilation=(1,2,2))
+    ##print(nbs)
+    arr = np.arange(16).reshape((1,1,4,4)).astype(np.float32)
+    rst = maxpool(arr, (2,2), (2,2))
+    

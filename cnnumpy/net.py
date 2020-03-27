@@ -21,6 +21,7 @@ class Net:
 					p = [rst[i] for i in out]
 				else: p = rst[out]
 				rst[y] = dic[l](p)
+				#print(l, 'in:', out, 'out', y, rst[y].sum())
 		return rst[y]
 
 	def layer2code(self, style='list'):

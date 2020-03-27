@@ -38,15 +38,17 @@ class Dense(Layer):
 
 class Conv2d(Layer):
     name = 'conv'
-    def __init__(self, c, n, w, s):
-        self.n, self.c, self.w, self.s = n, c, w, s
+    def __init__(self, c, n, w, s=1, d=1):
+        self.n, self.c, self.w = n, c, w
+        self.s, self.d = s, d
         self.K = np.zeros((n, c, w, w), dtype=np.float32)
         self.bias = np.zeros(n, dtype=np.float32)
 
-    def para(self): return self.n, self.c, self.w, self.s
+    def para(self): 
+        return self.n, self.c, self.w, self.s, self.d
 
     def forward(self, x):
-        out = conv(x, self.K, (self.s, self.s))
+        out = conv(x, self.K, (self.s, self.s), (self.d, self.d))
         out += self.bias.reshape((1, -1, 1, 1))
         return out
 
@@ -88,13 +90,13 @@ class Softmax(Layer):
 
 class Maxpool(Layer):
     name = 'maxpool'
-    def __init__(self, stride=2):
+    def __init__(self, w=2, stride=2):
         self.stride = stride
 
     def para(self): return (self.stride,)
 
     def forward(self, x):
-        return maxpool(x, (self.stride, self.stride))
+        return maxpool(x, (self.w, self.w), (self.stride, self.stride))
 
 class UpSample(Layer):
     name = 'upsample'
@@ -113,7 +115,18 @@ class Concatenate(Layer):
     def forward(self, x):
         return np.concatenate(x, axis=1)
 
-layerkey = {'dense':Dense, 'conv':Conv2d, 'relu':ReLU, 
+class BatchNorm(Layer):
+    name = 'batchnorm'
+    def __init__(self, c):
+        self.c = c
+    
+    def forward(self, x):
+        return x
+
+    def load(self, buf):
+        return self.c * 2
+
+layerkey = {'dense':Dense, 'conv':Conv2d, 'relu':ReLU, 'batchnorm':BatchNorm,
     'flatten':Flatten, 'sigmoid':Sigmoid, 'softmax': Softmax,
     'maxpool':Maxpool, 'upsample':UpSample, 'concat':Concatenate}
 
