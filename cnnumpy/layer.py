@@ -94,10 +94,17 @@ class Maxpool(Layer):
         self.w = w
         self.stride = stride
 
-    def para(self): return (self.stride,)
+    def para(self): return (self.w, self.stride)
 
     def forward(self, x):
         return maxpool(x, (self.w, self.w), (self.stride, self.stride))
+
+class GlobalAveragePool(Layer):
+    name = 'gap'
+    def __init__(self): pass    
+
+    def forward(self, x):
+        return x.mean(axis=(-2, -1))
 
 class UpSample(Layer):
     name = 'upsample'
@@ -150,7 +157,7 @@ class BatchNorm(Layer):
 
 layerkey = {'dense':Dense, 'conv':Conv2d, 'relu':ReLU, 'batchnorm':BatchNorm,
     'flatten':Flatten, 'sigmoid':Sigmoid, 'softmax': Softmax,
-    'maxpool':Maxpool, 'upsample':UpSample, 'concat':Concatenate, 'add':Add}
+    'maxpool':Maxpool, 'upsample':UpSample, 'concat':Concatenate, 'add':Add, 'gap':GlobalAveragePool}
 
 if __name__ == "__main__":
     pass

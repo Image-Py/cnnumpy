@@ -12,3 +12,8 @@ Demo for edge detector with model HED. Run ```python main.py``` inside folder ``
 The detected result is shown as following: 
 ![](https://raw.githubusercontent.com/Image-Py/cnnumpy/master/demo/hed_edge_detector/rst.png)
 
+## Resnet18 trained on ImageNet
+Demo for image classification with resnet18. ```python main.py``` inside folder ```resnet18```. 2 files (same level folder with ```main.py```) are needed (res.txt, [res.npy]())
+The detected result is shown as following: 
+![](https://raw.githubusercontent.com/Image-Py/cnnumpy/master/demo/resnet18/rst.png)
+

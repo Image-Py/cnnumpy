@@ -26,6 +26,7 @@ def parse(matched):
 
 conv = re.compile(r'.*%(.+?) .+?(Conv).+?dilations=(\[\d+?, \d+?\]).+?strides=(\[\d+?, \d+?\]).+?(\(%.+?, %.+?, %.+?\)).+?\n')
 relu = re.compile(r'.*%(.+?) .+?(Relu)\(%(.+?)\).+?\n')
+gap = re.compile(r'.*%(.+?) .+?(GlobalAveragePool)\(%(.+?)\).+?\n')
 sigmoid = re.compile(r'.*%(.+?) .+?(Sigmoid)\(%(.+?)\).+?\n')
 maxpool = re.compile(r'.*%(.+?) .+?(MaxPool).+?kernel_shape=(\[\d+?, \d+?\]).+?strides=(\[\d+?, \d+?\]).+?\(%(.+?)\).+?\n')
 upsample = re.compile(r'.*%.+? .+?Constant\[value=.+?(\d+\.?\d*) \[.+?\n.+?%(.+?) .+?(Upsample).+?\(%(.+?),.+?\n')
@@ -36,7 +37,7 @@ batchnorm = re.compile(r'.*%(.+?) .+?(BatchNormalization).+?(\(.+?\)).+?\n')
 add = re.compile(r'.*%(.+?) .+?(Add)(\(%.+?\)).+?\n')
 weight = re.compile(r'.*%(.+?) .+?(\(.*?\)).*\n')
 
-res = (flatten, upsample, conv, relu, sigmoid, maxpool, dense, concat, add, batchnorm, weight)
+res = (flatten, upsample, conv, relu, gap, sigmoid, maxpool, dense, concat, add, batchnorm, weight)
 
 def read_onnx(path):
 	with open(path+'.txt') as f:
@@ -58,7 +59,7 @@ def read_onnx(path):
 			flow.append((i[4][0], ['conv_%s'%num], i[0]))
 		elif i[1]=='Gemm':
 			num = len(body)
-			body.append(('dense_%s'%num, 'dense', key[i[2][1][::-1]]))
+			body.append(('dense_%s'%num, 'dense', key[i[2][1]][::-1]))
 			flow.append((i[2][0], ['dense_%s'%num], i[0]))
 		elif i[1]=='Sigmoid':
 			num = len(body)
@@ -68,6 +69,10 @@ def read_onnx(path):
 			num = len(body)
 			body.append(('relu_%s'%num, 'relu', None))
 			flow.append((i[2], ['relu_%s'%num], i[0]))
+		elif i[1]=='GlobalAveragePool':
+			num = len(body)
+			body.append(('gap_%s'%num, 'gap', None))
+			flow.append((i[2], ['gap_%s'%num], i[0]))
 		elif i[1]=='Add':
 			num = len(body)
 			body.append(('add_%s'%num, 'add', None))
@@ -93,8 +98,9 @@ def read_onnx(path):
 			body.append(('flatten_%s'%num, 'flatten', None))
 			flow.append((i[2], ['flatten_%s'%num], i[0]))
 
-	#for i in body: print(i)
-	#for i in flow: print(i)
+	# for i in body: print(i)
+	# print("===============	")
+	# for i in flow: print(i)
 	
 	net = Net()
 	net.load_json(body, flow)
