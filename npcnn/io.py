@@ -43,7 +43,7 @@ def read_onnx(path):
 	with open(path+'.txt') as f:
 		cont = f.read()
 	for i in res: cont = i.sub(parse, cont)
-	#for i in cont.split('\n'): print(i)
+	# for i in cont.split('\n'): print(i)
 	cont = [eval(i) for i in cont.split('\n') if len(i)>0 and i[0]=='[']
 	cont = [[eval(j) if (',' in j) else j for j in i] for i in cont]
 

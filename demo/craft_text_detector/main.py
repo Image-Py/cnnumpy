@@ -1,6 +1,6 @@
 import sys
 sys.path.append('../../')
-from cnnumpy import read_onnx
+from npcnn import read_onnx
 import numpy as np
 from matplotlib import pyplot as plt
 from skimage import io, transform

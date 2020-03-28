@@ -1,4 +1,6 @@
-from cnnumpy import read_onnx
+import sys
+sys.path.append('../../')
+from npcnn import read_onnx
 import numpy as np
 from matplotlib import pyplot as plt
 from skimage import io, transform
@@ -23,7 +25,6 @@ def normal(img):
 img =  io.imread('test.jpg')
 img = makesize8(img)
 x = normal(img).transpose(2, 0, 1)[None, :, :, :].copy()
-
 
 # 2 files needed, hed.txt, hed.npy
 net = read_onnx('hed')

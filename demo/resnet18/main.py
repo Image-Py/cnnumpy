@@ -1,5 +1,5 @@
 import numpy as np
-from cnnumpy import read_onnx
+from npcnn import read_onnx
 from imagenet_labels import classes
 from skimage import io, transform
 from matplotlib import pyplot as plt

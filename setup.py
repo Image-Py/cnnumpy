@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='cnnumpy',
+    name='npcnn',
     packages=find_packages()
 )
