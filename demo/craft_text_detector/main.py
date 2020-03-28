@@ -28,7 +28,8 @@ x =  normalize(img).transpose(2, 0, 1)[None, :, :, :].copy()
 net = read_onnx('craft')
 y = net(x)
 start = time()
-y = net(x)
+for i in range(10):
+    y = net(x)
 print('craft detect time:', time()-start)
 
 plt.subplot(131)

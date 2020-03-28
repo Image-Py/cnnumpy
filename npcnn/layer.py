@@ -154,10 +154,9 @@ class BatchNorm(Layer):
         self.v[:] = buf[3*c:4*c]
         return self.c * 4
 
-
 layerkey = {'dense':Dense, 'conv':Conv2d, 'relu':ReLU, 'batchnorm':BatchNorm,
-    'flatten':Flatten, 'sigmoid':Sigmoid, 'softmax': Softmax,
-    'maxpool':Maxpool, 'upsample':UpSample, 'concat':Concatenate, 'add':Add, 'gap':GlobalAveragePool}
+    'flatten':Flatten, 'sigmoid':Sigmoid, 'softmax': Softmax, 'maxpool':Maxpool, 
+    'upsample':UpSample, 'concat':Concatenate, 'add':Add, 'gap':GlobalAveragePool}
 
 if __name__ == "__main__":
     pass
