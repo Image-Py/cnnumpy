@@ -53,8 +53,11 @@ Coming soon.
 
 ## Demos
 We have released some demos, which can be investigated inside ```demo/``` folder.
+
 ![](https://raw.githubusercontent.com/Image-Py/numpy-cnn/master/demo/craft_text_detector/rst.png)
+
 ![](https://raw.githubusercontent.com/Image-Py/numpy-cnn/master/demo/hed_edge_detector/rst.png)
+
 ![](https://raw.githubusercontent.com/Image-Py/numpy-cnn/master/demo/resnet18/rst.png)
 
 
