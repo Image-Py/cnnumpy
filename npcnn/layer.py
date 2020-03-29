@@ -38,9 +38,23 @@ class Dense(Layer):
 
 class Conv2d(Layer):
     name = 'conv'
-    def __init__(self, c, n, w, s=1, d=1):
+    """
+    c: in_channels
+    n: out_channels
+    w: kernel_size
+    g: groups
+    s: stride
+    d: dilation
+    """
+    def __init__(self, c, n, w, g=1, s=1, d=1):
+        
         self.n, self.c, self.w = n, c, w
-        self.s, self.d = s, d
+        self.g, self.s, self.d = g, s, d
+
+        self.real_c = int(self.c/self.g)
+        self.real_n = int(self.n/self.g)
+        
+        
         self.K = np.zeros((n, c, w, w), dtype=np.float32)
         self.bias = np.zeros(n, dtype=np.float32)
 
@@ -48,6 +62,8 @@ class Conv2d(Layer):
         return self.n, self.c, self.w, self.s, self.d
 
     def forward(self, x):
+        N, C, H, W = x.shape
+        
         out = conv(x, self.K, (self.s, self.s), (self.d, self.d))
         out += self.bias.reshape((1, -1, 1, 1))
         return out

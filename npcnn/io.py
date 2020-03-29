@@ -24,7 +24,7 @@ def parse(matched):
 
 	return str(gps)+'\n'
 
-conv = re.compile(r'.*%(.+?) .+?(Conv).+?dilations=(\[\d+?, \d+?\]).+?strides=(\[\d+?, \d+?\]).+?(\(%.+?, %.+?, %.+?\)).+?\n')
+conv = re.compile(r'.*%(.+?) .+?(Conv).+?dilations=(\[\d+?, \d+?\]).+?group=(\d+).+?strides=(\[\d+?, \d+?\]).+?(\(%.+?, %.+?, %.+?\)).+?\n')
 relu = re.compile(r'.*%(.+?) .+?(Relu)\(%(.+?)\).+?\n')
 gap = re.compile(r'.*%(.+?) .+?(GlobalAveragePool)\(%(.+?)\).+?\n')
 sigmoid = re.compile(r'.*%(.+?) .+?(Sigmoid)\(%(.+?)\).+?\n')
@@ -54,9 +54,11 @@ def read_onnx(path):
 		if len(i)==2: key[i[0]] = i[1]
 		elif i[1]=='Conv':
 			num = len(body)
-			shp = [key[i[4][1]][j] for j in (1,0,2)] + [i[3][0], i[2][0]]
+			print(i)
+			shp = [key[i[5][1]][j] for j in (1,0,2)] + [int(i[3]), i[4][0], i[2][0]]
+			# conv shape, [group, stride, dilation]
 			body.append(('conv_%s'%num, 'conv', shp))
-			flow.append((i[4][0], ['conv_%s'%num], i[0]))
+			flow.append((i[5][0], ['conv_%s'%num], i[0]))
 		elif i[1]=='Gemm':
 			num = len(body)
 			body.append(('dense_%s'%num, 'dense', key[i[2][1]][::-1]))
@@ -98,7 +100,7 @@ def read_onnx(path):
 			body.append(('flatten_%s'%num, 'flatten', None))
 			flow.append((i[2], ['flatten_%s'%num], i[0]))
 
-	# for i in body: print(i)
+	for i in body: print(i)
 	# print("===============	")
 	# for i in flow: print(i)
 	

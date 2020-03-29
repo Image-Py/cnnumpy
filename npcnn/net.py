@@ -11,6 +11,10 @@ class Net:
 			self.body.append((i[0], key[i[1]](*para)))
 		self.cmds = cmds
 
+		# for better naming
+		self.layer = body
+		self.flow = cmds
+
 	def forward(self, x):
 		dic = dict(self.body)
 		rst = {self.cmds[0][0]: x}
@@ -25,8 +29,9 @@ class Net:
 		return rst[y]
 
 	def layer2code(self, style='list'):
+		body = []
 		if style == 'list':
-			body = ['self.body = [']
+			body = ['self.layer = [']
 			for i in self.body:
 				body.append('\t("%s", %s, %s),'%(i[0], 
 					i[1].__class__.__name__, i[1].para()))
@@ -48,7 +53,7 @@ class Net:
 	def flw2code(self, style='list'):
 		body = []
 		if style=='list':
-			body.append('dic = dict(self.body)')
+			# body.append('dic = dict(self.body)')
 			for x, ls, y in self.cmds:
 				for l in ls:
 					out = x if l == ls[0] else y
