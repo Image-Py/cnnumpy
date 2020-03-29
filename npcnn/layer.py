@@ -1,4 +1,4 @@
-from .util import conv, maxpool, upsample
+from .util import conv, maxpool, upsample, avgpool
 import numpy as np
 
 class Layer:
@@ -47,13 +47,10 @@ class Conv2d(Layer):
     d: dilation
     """
     def __init__(self, c, n, w, g=1, s=1, d=1):
-        
         self.n, self.c, self.w = n, c, w
         self.g, self.s, self.d = g, s, d
 
-        self.real_c = int(self.c/self.g)
         self.real_n = int(self.n/self.g)
-        
         
         self.K = np.zeros((n, c, w, w), dtype=np.float32)
         self.bias = np.zeros(n, dtype=np.float32)
@@ -62,9 +59,12 @@ class Conv2d(Layer):
         return self.n, self.c, self.w, self.s, self.d
 
     def forward(self, x):
-        N, C, H, W = x.shape
-        
-        out = conv(x, self.K, (self.s, self.s), (self.d, self.d))
+        out = []
+        for i in range(self.g):
+            x_ = x[:, i*self.c:(i+1)*self.c, :, :]
+            k = self.K[i*self.real_n:(i+1)*self.real_n, :, :, :]
+            out.append(conv(x_, k, (self.s, self.s), (self.d, self.d)))
+        out = np.concatenate(out, axis=1)
         out += self.bias.reshape((1, -1, 1, 1))
         return out
 
@@ -115,6 +115,17 @@ class Maxpool(Layer):
     def forward(self, x):
         return maxpool(x, (self.w, self.w), (self.stride, self.stride))
 
+class Avgpool(Layer):
+    name = 'avgpool'
+    def __init__(self, w=2, stride=2):
+        self.w = w
+        self.stride = stride
+
+    def para(self): return (self.w, self.stride)
+
+    def forward(self, x):
+        return avgpool(x, (self.w, self.w), (self.stride, self.stride))
+
 class GlobalAveragePool(Layer):
     name = 'gap'
     def __init__(self): pass    
@@ -157,7 +168,7 @@ class BatchNorm(Layer):
     
     def forward(self, x):
         x = (x - self.m.reshape(1, -1, 1, 1))
-        x /= np.sqrt(self.v.reshape(1, -1, 1, 1))
+        x /= np.sqrt(self.v.reshape(1, -1, 1, 1) + 0.001)
         x *= self.k.reshape(1, -1, 1, 1) 
         x += self.b.reshape(1, -1, 1, 1)
         return x
@@ -171,7 +182,7 @@ class BatchNorm(Layer):
         return self.c * 4
 
 layerkey = {'dense':Dense, 'conv':Conv2d, 'relu':ReLU, 'batchnorm':BatchNorm,
-    'flatten':Flatten, 'sigmoid':Sigmoid, 'softmax': Softmax, 'maxpool':Maxpool, 
+    'flatten':Flatten, 'sigmoid':Sigmoid, 'softmax': Softmax, 'maxpool': Maxpool, 'avgpool': Avgpool, 
     'upsample':UpSample, 'concat':Concatenate, 'add':Add, 'gap':GlobalAveragePool}
 
 if __name__ == "__main__":

@@ -72,13 +72,31 @@ def jit_fill_max(pdimg, msk, idx, colimg):
         s += 1
     return colimg
 
+def jit_fill_mean(pdimg, msk, idx, colimg):
+    s = 0
+    for i in range(len(pdimg)):
+        if not msk[i]: continue
+        for j in idx:
+            colimg[s] = (colimg[s]+pdimg[i+j])/2
+        s += 1
+    return colimg
+
+
 def fill_max(pdimg, msk, idx, colimg):
     rc = np.where(msk)[0]
     rc = rc.reshape((-1,1))+idx
     vs = pdimg[rc.ravel()].reshape((-1, len(idx)))
     np.max(vs, axis=-1, out=colimg)
 
-if not njit is None: fill_max = njit(jit_fill_max)
+def fill_mean(pdimg, msk, idx, colimg):
+    rc = np.where(msk)[0]
+    rc = rc.reshape((-1,1))+idx
+    vs = pdimg[rc.ravel()].reshape((-1, len(idx)))
+    np.mean(vs, axis=-1, out=colimg)
+
+if not njit is None: 
+    fill_max = njit(jit_fill_max)
+    fill_mean = njit(jit_fill_mean)
 
 def maxpool(img, core=(2,2), stride=(2,2)):
     (n,c,h,w), (ch, cw), (strh, strw) = img.shape, core, stride
@@ -94,6 +112,22 @@ def maxpool(img, core=(2,2), stride=(2,2)):
     nbs = neighbors(pdimg.shape[1:], (1,)+core, (0,1,1))
     colimg = np.zeros((n, c, h//strh, w//strw), dtype=np.float32)
     fill_max(pdimg.ravel(), msk.ravel(), nbs, colimg.ravel())
+    return colimg
+
+def avgpool(img, core=(2,2), stride=(2,2)):
+    (n,c,h,w), (ch, cw), (strh, strw) = img.shape, core, stride
+    shp = ((0,0),(0,0),((ch-1)//2,)*2,((cw-1)//2,)*2)
+    if np.array(shp).sum()==0: pdimg = img
+    else: pdimg = np.pad(img, shp, 'constant', constant_values=0)
+    
+    msk = np.zeros(pdimg.shape, dtype=np.bool)
+    sliceh = slice((ch-1)//2, -((ch-1)//2) or None, strh)
+    slicew = slice((cw-1)//2, -((cw-1)//2) or None, strw)
+    msk[:, :, sliceh, slicew] = True
+    
+    nbs = neighbors(pdimg.shape[1:], (1,)+core, (0,1,1))
+    colimg = np.zeros((n, c, h//strh, w//strw), dtype=np.float32)
+    fill_mean(pdimg.ravel(), msk.ravel(), nbs, colimg.ravel())
     return colimg
 
 def jit_bilinear(img, ra, rb, rs, _rs, ca, cb, cs, _cs, out):

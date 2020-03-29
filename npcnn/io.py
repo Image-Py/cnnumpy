@@ -29,6 +29,7 @@ relu = re.compile(r'.*%(.+?) .+?(Relu)\(%(.+?)\).+?\n')
 gap = re.compile(r'.*%(.+?) .+?(GlobalAveragePool)\(%(.+?)\).+?\n')
 sigmoid = re.compile(r'.*%(.+?) .+?(Sigmoid)\(%(.+?)\).+?\n')
 maxpool = re.compile(r'.*%(.+?) .+?(MaxPool).+?kernel_shape=(\[\d+?, \d+?\]).+?strides=(\[\d+?, \d+?\]).+?\(%(.+?)\).+?\n')
+avgpool = re.compile(r'.*%.+?Pad.+?\n.+?%(.+?) .+?(AveragePool).+?kernel_shape=(\[\d+?, \d+?\]).+?strides=(\[\d+?, \d+?\]).+?\(%(.+?)\).+?\n')
 upsample = re.compile(r'.*%.+? .+?Constant\[value=.+?(\d+\.?\d*) \[.+?\n.+?%(.+?) .+?(Upsample).+?\(%(.+?),.+?\n')
 flatten = re.compile(r'.*%.+?Constant.+?\n.+?Shape.+?\n.+?Gather.+?\n.+?Constant.+?\n.+?Unsqueeze.+?\n.+?Unsqueeze.+?\n.+?Concat.+?\n.+?%(.+?) .+?(Reshape)\(%(.+?),.+?\n')
 dense = re.compile(r'.*%(.+?) .+?(Gemm).+(\(%.+?, %.+?, %.+?\)).+?\n')
@@ -37,7 +38,7 @@ batchnorm = re.compile(r'.*%(.+?) .+?(BatchNormalization).+?(\(.+?\)).+?\n')
 add = re.compile(r'.*%(.+?) .+?(Add)(\(%.+?\)).+?\n')
 weight = re.compile(r'.*%(.+?) .+?(\(.*?\)).*\n')
 
-res = (flatten, upsample, conv, relu, gap, sigmoid, maxpool, dense, concat, add, batchnorm, weight)
+res = (flatten, upsample, conv, relu, gap, sigmoid, maxpool, avgpool, dense, concat, add, batchnorm, weight)
 
 def read_onnx(path):
 	with open(path+'.txt') as f:
@@ -54,8 +55,8 @@ def read_onnx(path):
 		if len(i)==2: key[i[0]] = i[1]
 		elif i[1]=='Conv':
 			num = len(body)
-			print(i)
-			shp = [key[i[5][1]][j] for j in (1,0,2)] + [int(i[3]), i[4][0], i[2][0]]
+			grp = int(i[3])
+			shp = [key[i[5][1]][j] for j in (1,0,2)] + [grp, i[4][0], i[2][0]]
 			# conv shape, [group, stride, dilation]
 			body.append(('conv_%s'%num, 'conv', shp))
 			flow.append((i[5][0], ['conv_%s'%num], i[0]))
@@ -83,6 +84,11 @@ def read_onnx(path):
 			num = len(body)
 			body.append(('concat_%s'%num, 'concat', None))
 			flow.append((i[2], ['concat_%s'%num], i[0]))
+		elif i[1]=='AveragePool':
+			num = len(body)
+			body.append(('avgpool_%s'%num, 'avgpool', [i[2][0], i[3][0]]))
+			# minus 1 cause Pad before avgpool 
+			flow.append((str(int(i[4])-1), ['avgpool_%s'%num], i[0]))
 		elif i[1]=='MaxPool':
 			num = len(body)
 			body.append(('maxpool_%s'%num, 'maxpool', [i[2][0], i[3][0]]))
@@ -100,7 +106,7 @@ def read_onnx(path):
 			body.append(('flatten_%s'%num, 'flatten', None))
 			flow.append((i[2], ['flatten_%s'%num], i[0]))
 
-	for i in body: print(i)
+	# for i in body: print(i)
 	# print("===============	")
 	# for i in flow: print(i)
 	
