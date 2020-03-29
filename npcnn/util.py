@@ -96,14 +96,14 @@ def maxpool(img, core=(2,2), stride=(2,2)):
     fill_max(pdimg.ravel(), msk.ravel(), nbs, colimg.ravel())
     return colimg
 
-def jit_resize(img, k, ra, rb, rs, _rs, ca, cb, cs, _cs, out):
+def jit_bilinear(img, ra, rb, rs, _rs, ca, cb, cs, _cs, out):
     h, w = img.shape
-    for r in range(h*k):
+    for r in range(out.shape[0]):
         rar = ra[r]
         rbr = rar+1
         rsr = rs[r]
         _rsr = _rs[r]
-        for c in range(w*k):
+        for c in range(out.shape[1]):
             cac = ca[c]
             cbc = cac+1
             rra = img[rar,cac]*_rsr
@@ -113,18 +113,21 @@ def jit_resize(img, k, ra, rb, rs, _rs, ca, cb, cs, _cs, out):
             rcab = rra * _cs[c] + rrb * cs[c]
             out[r,c] = rcab
 
-def resize(img, k, ra, rb, rs, _rs, ca, cb, cs, _cs, out):
+def bilinear(img, ra, rb, rs, _rs, ca, cb, cs, _cs, out):
     out[:img.shape[0]] = img[:,ca]*_cs + img[:,cb]*cs
     out[:] = (out[ra].T*_rs + out[rb].T*rs).T
-    
-if not njit is None: resize = njit(jit_resize)
 
-def upsample(img, k, out=None):
+if not njit is None: bilinear = njit(jit_bilinear)
+
+def resize(img, size, out=None):
     nc, (h, w) = img.shape[:-2], img.shape[-2:]
+    kh, kw = size[0]/h, size[1]/w
     if out is None:
-        out = np.zeros(nc+(h*k, w*k), dtype=img.dtype)
-    rs = np.linspace(-0.5+0.5/k, h-0.5-0.5/k, h*k, dtype=np.float32)
-    cs = np.linspace(-0.5+0.5/k, w-0.5-0.5/k, w*k, dtype=np.float32)
+        out = np.zeros(nc+size, dtype=img.dtype)
+    slicer = -0.5+0.5/kh, h-0.5-0.5/kh, size[0]
+    rs = np.linspace(*slicer, dtype=np.float32)
+    slicec = -0.5+0.5/kw, w-0.5-0.5/kw, size[1]
+    cs = np.linspace(*slicec, dtype=np.float32)
     np.clip(rs, 0, h-1, out=rs)
     np.clip(cs, 0, w-1, out=cs)
     ra = np.floor(rs).astype(np.uint32)
@@ -132,16 +135,31 @@ def upsample(img, k, out=None):
     np.clip(ra, 0, h-1.5, out=ra)
     np.clip(ca, 0, w-1.5, out=ca)
     rs -= ra; cs -= ca; 
-    outcol = out.reshape((-1, h*k, w*k))
+    outcol = out.reshape((-1, *size))
     imgcol = img.reshape((-1, h, w))
     for i, o in zip(imgcol, outcol):
-        resize(i, k, ra, ra+1, rs, 1-rs, ca, ca+1, cs, 1-cs, o)
+        bilinear(i, ra, ra+1, rs, 1-rs, ca, ca+1, cs, 1-cs, o)
     return out
+    
+def upsample(img, k, out=None):
+    return resize(img, (img.shape[-2]*k, img.shape[-1]*k), out)
 
 if __name__ == '__main__':
-    from skimage.data import camera
+    from skimage.data import camera, astronaut
     import matplotlib.pyplot as plt
     from scipy.ndimage import convolve
+    
+    img = np.zeros((10,10,512,512), dtype=np.float32)
+    # upsample(img, 2.0) # 0.4, 2.1
+    img = astronaut().transpose((2,0,1))
+    resize(img, (1024,1024))
+    start = time()
+    rst = resize(img, (300,300))
+    print(time()-start)
+    plt.imshow(rst.transpose((1,2,0)))
+    plt.show()
+               
+    '''
     img = np.zeros((1, 3, 512, 512), dtype=np.float32)
     #img.ravel()[:] = np.arange(3*512*512)
     core = np.zeros((32, 3, 3, 3), dtype=np.float32)
@@ -155,12 +173,13 @@ if __name__ == '__main__':
     start = time()
     rst2 = conv(img, core, (1,1)) # 0.09， 0.045
     print('numpy cost:', time()-start)
-    
+    '''
     
     ##nbs = neighbors((4, 5, 6), (3,3,3), offset = (0,1,1), dilation=(1,2,2))
     ##print(nbs)
     #arr = np.arange(16).reshape((1,1,4,4)).astype(np.float32)
     #rst = maxpool(arr, (2,2), (2,2))
+    
     '''
     arr = np.zeros((3,4,5), dtype=np.bool)
     arr[0,:,:] = 1
