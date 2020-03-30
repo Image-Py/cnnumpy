@@ -15,7 +15,7 @@ x = resize(x, (224, 224))
 net = read_onnx('mobile')
 print('load done!')
 
-net(x)
+y = net(x)
 start = time()
 for i in range(10):
     y = net(x)

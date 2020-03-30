@@ -63,7 +63,6 @@ def conv(img, core, group=1, stride=(1,1), dilation=(1,1), buf=['']):
         col_img = col_img.reshape((group, -1, cimg_w//group))
         rst = [i.dot(j.T) for i,j in zip(col_core, col_img)]
         rst = np.concatenate(rst)
-
     ni, ci, hi, wi = img.shape
     return rst.reshape((ni, n, hi//strh, wi//strw))
 
