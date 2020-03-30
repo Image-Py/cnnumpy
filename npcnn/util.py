@@ -32,10 +32,9 @@ def fill_col(pdimg, msk, idx, colimg):
 
 if not njit is None: fill_col = njit(jit_fill_col)
 
-def conv(img, core, stride=(1,1), dilation=(1,1), buf=['']):
-    # new the col_img, if needed
+def conv(img, core, group=1, stride=(1,1), dilation=(1,1), buf=['']):
     strh, strw = stride
-    cimg_w = np.cumprod(core.shape[1:])[-1]
+    cimg_w = np.cumprod(core.shape[1:])[-1] * group
     n,c,h,w = img.shape
     cimg_h = n*(h//strh)*(w//strw)
     if len(buf[0])<cimg_h*cimg_w:
@@ -44,22 +43,27 @@ def conv(img, core, stride=(1,1), dilation=(1,1), buf=['']):
     else:
         col_img = buf[0][:cimg_h*cimg_w]
         col_img[:] = 0
-    # ravel the image
     (n,c,h,w), (dh, dw) = core.shape, dilation
     shp = ((0,0),(0,0),(h*dh//2,h*dh//2),(w*dw//2,w*dw//2))
     pdimg = np.pad(img, shp, 'constant', constant_values=0)
     msk = np.zeros(pdimg.shape, dtype=np.bool)
     sliceh = slice(h*dh//2, -(h*dh//2) or None, strh)
     slicew = slice(w*dw//2, -(w*dw//2) or None, strw)
-    msk[:, 0, sliceh, slicew] = True
+    msk[:, ::c, sliceh, slicew] = True
     
     nbs = neighbors(pdimg.shape[1:], core.shape[1:], (0,1,1), (1, dh, dw))
     fill_col(pdimg.ravel(), msk.ravel(), nbs, col_img)
-    col_img = col_img.reshape((cimg_h, cimg_w))
     
-    # dot
-    col_core = core.reshape((core.shape[0],-1))
-    rst = col_core.dot(col_img.T)
+    if group==1: 
+        col_core = core.reshape((core.shape[0],-1))
+        col_img = col_img.reshape((cimg_h, cimg_w))
+        rst = col_core.dot(col_img.T)
+    else:
+        col_core = core.reshape((group, core.shape[0]//group,-1))
+        col_img = col_img.reshape((group, -1, cimg_w//group))
+        rst = [i.dot(j.T) for i,j in zip(col_core, col_img)]
+        rst = np.concatenate(rst)
+
     ni, ci, hi, wi = img.shape
     return rst.reshape((ni, n, hi//strh, wi//strw))
 
@@ -73,14 +77,14 @@ def jit_fill_max(pdimg, msk, idx, colimg):
     return colimg
 
 def jit_fill_mean(pdimg, msk, idx, colimg):
-    s = 0
+    s, l = 0, len(idx)
     for i in range(len(pdimg)):
         if not msk[i]: continue
         for j in idx:
-            colimg[s] = (colimg[s]+pdimg[i+j])/2
+            colimg[s] += pdimg[i+j]
+        colimg[s] /= l
         s += 1
     return colimg
-
 
 def fill_max(pdimg, msk, idx, colimg):
     rc = np.where(msk)[0]
@@ -98,7 +102,7 @@ if not njit is None:
     fill_max = njit(jit_fill_max)
     fill_mean = njit(jit_fill_mean)
 
-def maxpool(img, core=(2,2), stride=(2,2)):
+def pool(img, f, core=(2,2), stride=(2,2)):
     (n,c,h,w), (ch, cw), (strh, strw) = img.shape, core, stride
     shp = ((0,0),(0,0),((ch-1)//2,)*2,((cw-1)//2,)*2)
     if np.array(shp).sum()==0: pdimg = img
@@ -111,24 +115,11 @@ def maxpool(img, core=(2,2), stride=(2,2)):
     
     nbs = neighbors(pdimg.shape[1:], (1,)+core, (0,1,1))
     colimg = np.zeros((n, c, h//strh, w//strw), dtype=np.float32)
-    fill_max(pdimg.ravel(), msk.ravel(), nbs, colimg.ravel())
+    f(pdimg.ravel(), msk.ravel(), nbs, colimg.ravel())
     return colimg
 
-def avgpool(img, core=(2,2), stride=(2,2)):
-    (n,c,h,w), (ch, cw), (strh, strw) = img.shape, core, stride
-    shp = ((0,0),(0,0),((ch-1)//2,)*2,((cw-1)//2,)*2)
-    if np.array(shp).sum()==0: pdimg = img
-    else: pdimg = np.pad(img, shp, 'constant', constant_values=0)
-    
-    msk = np.zeros(pdimg.shape, dtype=np.bool)
-    sliceh = slice((ch-1)//2, -((ch-1)//2) or None, strh)
-    slicew = slice((cw-1)//2, -((cw-1)//2) or None, strw)
-    msk[:, :, sliceh, slicew] = True
-    
-    nbs = neighbors(pdimg.shape[1:], (1,)+core, (0,1,1))
-    colimg = np.zeros((n, c, h//strh, w//strw), dtype=np.float32)
-    fill_mean(pdimg.ravel(), msk.ravel(), nbs, colimg.ravel())
-    return colimg
+maxpool = lambda i, c=(2,2), s=(2,2): pool(i, fill_max, c, s)
+avgpool = lambda i, c=(2,2), s=(2,2): pool(i, fill_mean, c, s)
 
 def jit_bilinear(img, ra, rb, rs, _rs, ca, cb, cs, _cs, out):
     h, w = img.shape
@@ -148,8 +139,8 @@ def jit_bilinear(img, ra, rb, rs, _rs, ca, cb, cs, _cs, out):
             out[r,c] = rcab
 
 def bilinear(img, ra, rb, rs, _rs, ca, cb, cs, _cs, out):
-    out[:img.shape[0]] = img[:,ca]*_cs + img[:,cb]*cs
-    out[:] = (out[ra].T*_rs + out[rb].T*rs).T
+    buf = img[:,ca]*_cs + img[:,cb]*cs
+    out[:] = (buf[ra].T*_rs + buf[rb].T*rs).T
 
 if not njit is None: bilinear = njit(jit_bilinear)
 
@@ -182,7 +173,7 @@ if __name__ == '__main__':
     from skimage.data import camera, astronaut
     import matplotlib.pyplot as plt
     from scipy.ndimage import convolve
-    
+    '''
     img = np.zeros((10,10,512,512), dtype=np.float32)
     # upsample(img, 2.0) # 0.4, 2.1
     img = astronaut().transpose((2,0,1))
@@ -192,11 +183,12 @@ if __name__ == '__main__':
     print(time()-start)
     plt.imshow(rst.transpose((1,2,0)))
     plt.show()
-               
     '''
-    img = np.zeros((1, 3, 512, 512), dtype=np.float32)
+               
+    
+    img = np.zeros((2, 3, 16, 16), dtype=np.float32)
     #img.ravel()[:] = np.arange(3*512*512)
-    core = np.zeros((32, 3, 3, 3), dtype=np.float32)
+    core = np.zeros((2, 3, 3, 3), dtype=np.float32)
     #core.ravel()[:] = np.arange(3*3*3*32)
 
     rst1 = conv(img, core, (1,1))
@@ -207,7 +199,7 @@ if __name__ == '__main__':
     start = time()
     rst2 = conv(img, core, (1,1)) # 0.09， 0.045
     print('numpy cost:', time()-start)
-    '''
+    
     
     ##nbs = neighbors((4, 5, 6), (3,3,3), offset = (0,1,1), dilation=(1,2,2))
     ##print(nbs)

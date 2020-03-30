@@ -5,6 +5,7 @@ from npcnn import read_onnx, resize
 from imagenet_labels import classes
 from skimage import io
 from matplotlib import pyplot as plt
+from time import time
 
 img = io.imread('test.jpg')
 x = (img/255.0).transpose(2, 0, 1)
@@ -14,7 +15,12 @@ x = resize(x, (224, 224))
 net = read_onnx('resnet18')
 print('load done!')
 
-y = net(x)
+net(x)
+start = time()
+for i in range(10):
+    y = net(x)
+print('npcnn resnet18-v1 time:', time()-start)
+
 y = np.argmax(y, axis=-1)
 rst = classes[y[0]]
 

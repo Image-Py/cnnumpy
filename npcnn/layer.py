@@ -56,18 +56,14 @@ class Conv2d(Layer):
         self.bias = np.zeros(n, dtype=np.float32)
 
     def para(self): 
-        return self.n, self.c, self.w, self.s, self.d
-
+        return self.n, self.c, self.w, self.s, self.d  
+    
     def forward(self, x):
-        out = []
-        for i in range(self.g):
-            x_ = x[:, i*self.c:(i+1)*self.c, :, :]
-            k = self.K[i*self.real_n:(i+1)*self.real_n, :, :, :]
-            out.append(conv(x_, k, (self.s, self.s), (self.d, self.d)))
-        out = np.concatenate(out, axis=1)
+        out = conv(x, self.K, self.g, (self.s, self.s), (self.d, self.d))
         out += self.bias.reshape((1, -1, 1, 1))
         return out
-
+    
+    
     def load(self, buf):
         sk, sb = self.K.size, self.bias.size
         self.K.ravel()[:] = buf[:sk]
@@ -181,7 +177,7 @@ class BatchNorm(Layer):
         self.v[:] = buf[3*c:4*c]
         return self.c * 4
 
-layerkey = {'dense':Dense, 'conv':Conv2d, 'relu':ReLU, 'batchnorm':BatchNorm,
+layer_map = {'dense':Dense, 'conv':Conv2d, 'relu':ReLU, 'batchnorm':BatchNorm,
     'flatten':Flatten, 'sigmoid':Sigmoid, 'softmax': Softmax, 'maxpool': Maxpool, 'avgpool': Avgpool, 
     'upsample':UpSample, 'concat':Concatenate, 'add':Add, 'gap':GlobalAveragePool}
 

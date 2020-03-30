@@ -52,57 +52,45 @@ def read_onnx(path):
 	flow = []
 	key = {}
 	for i in cont:
+		num = len(body)
 		if len(i)==2: key[i[0]] = i[1]
 		elif i[1]=='Conv':
-			num = len(body)
-			grp = int(i[3])
-			shp = [key[i[5][1]][j] for j in (1,0,2)] + [grp, i[4][0], i[2][0]]
+			shp = [key[i[5][1]][j] for j in (1,0,2)] + [int(i[3]), i[4][0], i[2][0]]
 			# conv shape, [group, stride, dilation]
 			body.append(('conv_%s'%num, 'conv', shp))
 			flow.append((i[5][0], ['conv_%s'%num], i[0]))
 		elif i[1]=='Gemm':
-			num = len(body)
 			body.append(('dense_%s'%num, 'dense', key[i[2][1]][::-1]))
 			flow.append((i[2][0], ['dense_%s'%num], i[0]))
 		elif i[1]=='Sigmoid':
-			num = len(body)
 			body.append(('sigmoid_%s'%num, 'sigmoid', None))
 			flow.append((i[2], ['sigmoid_%s'%num], i[0]))
 		elif i[1]=='Relu':
-			num = len(body)
 			body.append(('relu_%s'%num, 'relu', None))
 			flow.append((i[2], ['relu_%s'%num], i[0]))
 		elif i[1]=='GlobalAveragePool':
-			num = len(body)
 			body.append(('gap_%s'%num, 'gap', None))
 			flow.append((i[2], ['gap_%s'%num], i[0]))
 		elif i[1]=='Add':
-			num = len(body)
 			body.append(('add_%s'%num, 'add', None))
 			flow.append((i[2], ['add_%s'%num], i[0]))
 		elif i[1]=='Concat':
-			num = len(body)
 			body.append(('concat_%s'%num, 'concat', None))
 			flow.append((i[2], ['concat_%s'%num], i[0]))
 		elif i[1]=='AveragePool':
-			num = len(body)
 			body.append(('avgpool_%s'%num, 'avgpool', [i[2][0], i[3][0]]))
 			# minus 1 cause Pad before avgpool 
 			flow.append((str(int(i[4])-1), ['avgpool_%s'%num], i[0]))
 		elif i[1]=='MaxPool':
-			num = len(body)
 			body.append(('maxpool_%s'%num, 'maxpool', [i[2][0], i[3][0]]))
 			flow.append((i[4], ['maxpool_%s'%num], i[0]))
 		elif i[2]=='Upsample':
-			num = len(body)
 			body.append(('upsample_%s'%num, 'upsample', [int(float(i[0]))]))
 			flow.append((i[3], ['upsample_%s'%num], i[1]))
 		elif i[1]=='BatchNormalization':
-			num = len(body)
 			body.append(('batchnorm_%s'%num, 'batchnorm', [key[i[2][1]][0]]))
 			flow.append((i[2][0], ['batchnorm_%s'%num,], i[0]))
 		elif i[1]=='Reshape':
-			num = len(body)
 			body.append(('flatten_%s'%num, 'flatten', None))
 			flow.append((i[2], ['flatten_%s'%num], i[0]))
 

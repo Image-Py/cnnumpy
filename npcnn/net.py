@@ -1,4 +1,4 @@
-from .layer import layerkey as key
+from .layer import layer_map as key
 
 class Net:
 	def __init__(self):
