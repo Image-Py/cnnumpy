@@ -23,9 +23,11 @@ The detected result is shown as following:
 ## Mobilenet-v1 trained on ImageNet
 Demo for image classification with mobilenet-v1. ```python main.py``` inside folder ```mobilenet-v1```. 2 files (same level folder with ```main.py```) are needed (mobile.txt, [mobile.npy](https://github.com/Image-Py/numpy-cnn/releases/download/resource/mobile.npy))
 The detected result is shown as following: 
+
 ![](https://raw.githubusercontent.com/Image-Py/cnnumpy/master/demo/resnet18/rst.png)
 
 ## Unet Segment
 Demo for Unet Segmetn trained with data [here](https://github.com/Jack-Cherish/Deep-Learning/tree/master/Pytorch-Seg/lesson-2/data). 1. ```python main.py``` inside folder ```unet-segment```. 2 files (same level folder with ```main.py```) are needed (unet.txt, [unet.npy](https://github.com/Image-Py/numpy-cnn/releases/download/resource/unet.npy))
 The detected result is shown as following: 
-![](https://raw.githubusercontent.com/Image-Py/cnnumpy/master/demo/resnet18/rst.png)
+
+![](https://raw.githubusercontent.com/Image-Py/cnnumpy/master/demo/unet-segment/rst.png)
