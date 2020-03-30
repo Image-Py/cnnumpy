@@ -21,4 +21,5 @@ The detected result is shown as following:
 ![](https://raw.githubusercontent.com/Image-Py/cnnumpy/master/demo/resnet18/rst.png)
 
 ## Mobilenet-v1
+[mobile.npy](https://github.com/Image-Py/numpy-cnn/releases/download/resource/mobile.npy)
 
