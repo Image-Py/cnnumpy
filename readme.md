@@ -50,6 +50,16 @@ net.load_json(layer, flow)
 * ONNX-converted (all the demos)
 Coming soon.
 
+# ========== Plot net Structure ========== 
+Using  plot_net() to plot the structure of net
+```python
+plot_net(net).show()
+```
+,and the demo.py include these code.  The plot result of UNET and HED  are as flowing:  
+![](https://raw.githubusercontent.com/Image-Py/numpy-cnn/master/demo/HED.png)
+  HED
+![](https://raw.githubusercontent.com/Image-Py/numpy-cnn/master/demo/UNET.png)
+UNET
 # Demos of numpy-cnn
 
 Here we release some supported demos.
