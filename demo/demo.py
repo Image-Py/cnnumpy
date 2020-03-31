@@ -1,5 +1,7 @@
-from cnnumpy import *
-
+import sys
+sys.path.append('../')
+from npcnn import *
+from npcnn.plot import plot_net
 # ========== write a net manually ========== 
 class CustomNet(Net):
     def __init__(self):
@@ -31,14 +33,14 @@ layer = [('conv', 'conv', (3, 64, 3, 1)),
         ('concat', 'concat', None),
         ('sigmoid', 'sigmoid', None)]
 
-flow = [('x', ['conv', 'relu'], 'x'),
-        ('x', ['pool', 'up'], 'y'),
-        (['x','y'], ['concat', 'sigmoid'], 'z')]
+flow = [('x', ['conv', 'relu'], 'y'),
+        ('y', ['pool', 'up'], 'z'),
+        (('y','z'), ['concat', 'sigmoid'], 'o')]
 
 net = Net()
 net.load_json(layer, flow)
 net(np.zeros((2, 3, 64, 64), dtype=np.float32))
-
+plot_net(net).show()
 # generate some code similiar to torch
 print('\n', '='*10, 'generate layer code', '='*10)
 print(net.layer2code('list'))
