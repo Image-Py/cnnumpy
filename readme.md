@@ -59,10 +59,10 @@ net.show()
 
 HED
 
-![](https://raw.githubusercontent.com/Image-Py/numpy-cnn/master/demo/HED.png)
+![HED](https://user-images.githubusercontent.com/24822467/78111180-dc350000-742e-11ea-9152-30dad06ee433.png)
 
 U-NET
-![](https://raw.githubusercontent.com/Image-Py/numpy-cnn/master/demo/UNET.png)
+![UNET](https://user-images.githubusercontent.com/24822467/78111489-4cdc1c80-742f-11ea-96cc-502e93ac9b70.png)
 
 # Demos of numpy-cnn
 
