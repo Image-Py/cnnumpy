@@ -51,7 +51,7 @@ net.load_json(layer, flow)
 Coming soon.
 
 ## Visualization
-Using  show() to plot the structure of net
+Using  show() to plot the structure of net (networkx and matplotlib needed)
 ```python
 net.show()
 ```
