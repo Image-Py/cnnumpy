@@ -78,6 +78,10 @@ class Net:
 		# print(data.shape, s)
 		# print(data_bn.shape, b)
 
+	def show(self, info = True):
+		from .plot import plot_net
+		plot_net(self.layer, self.flow, info).show()
+
 	def __call__(self, x):
 		return self.forward(x)
 

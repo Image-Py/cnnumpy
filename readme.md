@@ -51,9 +51,9 @@ net.load_json(layer, flow)
 Coming soon.
 
 ## Visualization
-Using  plot_net() to plot the structure of net
+Using  show() to plot the structure of net
 ```python
-plot_net(net).show()
+net.show()
 ```
 ```demo.py``` includes the plot. The result of UNET and HED are shown as flowing: 
 

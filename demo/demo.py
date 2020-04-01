@@ -2,6 +2,7 @@ import sys
 sys.path.append('../')
 from npcnn import *
 from npcnn.plot import plot_net
+
 # ========== write a net manually ========== 
 class CustomNet(Net):
     def __init__(self):
